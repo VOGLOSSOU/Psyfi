@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Dilemme du Jour</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <style>
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .choice-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .choice-btn:active {
+            transform: translateY(0);
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-100 to-purple-100 min-h-screen font-sans">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <!-- Landing Page -->
+        <div id="landing" class="text-center fade-in">
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-800 mb-6 animate__animated animate__fadeInDown">Le Dilemme du Jour</h1>
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 animate__animated animate__fadeIn">
+                <p class="text-lg text-gray-700 mb-6">
+                    Répondez à ces dilemmes moraux pour découvrir votre profil psychologique unique. 
+                    Chaque choix que vous ferez révèlera un peu plus de votre personnalité.
+                </p>
+                <p class="text-sm text-gray-500 italic">
+                    Prêt à vous découvrir sous un nouveau jour ?
+                </p>
+            </div>
+            <button id="start-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full text-lg transition-all duration-300 transform hover:scale-105 shadow-lg pulse">
+                Commencer le test
+            </button>
+        </div>
+
+        <!-- Question Container -->
+        <div id="question-container" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <!-- Progress Bar -->
+                <div class="bg-gray-200 h-2 w-full">
+                    <div id="progress-bar" class="progress-bar bg-indigo-600 h-2" style="width: 0%"></div>
+                </div>
+                
+                <div class="p-6 md:p-8">
+                    <!-- Question Counter -->
+                    <div class="text-sm text-gray-500 mb-2">
+                        Question <span id="question-counter">1</span>/<span id="total-questions">10</span>
+                    </div>
+                    
+                    <!-- Question Text -->
+                    <h2 id="question-text" class="text-xl md:text-2xl font-semibold text-gray-800 mb-6"></h2>
+                    
+                    <!-- Answer Choices -->
+                    <div id="answer-choices" class="space-y-3 mb-6"></div>
+                    
+                    <!-- Next Button -->
+                    <button id="next-btn" class="hidden bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300">
+                        Suivant
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Container -->
+        <div id="results-container" class="hidden">
+            <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 text-center">
+                <h2 class="text-3xl font-bold text-indigo-800 mb-4">Votre Profil</h2>
+                <div id="result-icon" class="text-6xl mb-4">🤔</div>
+                <h3 id="result-title" class="text-2xl font-semibold text-gray-800 mb-2"></h3>
+                <p id="result-description" class="text-gray-600 mb-6"></p>
+                <p id="result-quote" class="italic text-gray-500 mb-8"></p>
+                
+                <div class="flex flex-col sm:flex-row justify-center gap-4">
+                    <button id="restart-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-lg transition-all">
+                        Refaire le test
+                    </button>
+                    <button id="share-btn" class="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg transition-all flex items-center justify-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                        </svg>
+                        Partager
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Data
+        const questions = [
+            {
+                question: "Tu trouves un portefeuille avec 500€ mais aucune pièce d'identité. Que fais-tu ?",
+                answers: [
+                    { text: "Je le garde", type: "égoïste" },
+                    { text: "Je le déclare à la police", type: "moral" },
+                    { text: "Je tente de retrouver la personne", type: "empathique" },
+                    { text: "Je le laisse là", type: "indifférent" }
+                ]
+            },
+            {
+                question: "Ton ami te confie un secret important, mais en le gardant, tu risques de nuire à quelqu'un d'autre. Que fais-tu ?",
+                answers: [
+                    { text: "Je garde le secret coûte que coûte", type: "loyal" },
+                    { text: "Je révèle le secret pour protéger l'autre personne", type: "moral" },
+                    { text: "J'essaie de trouver un compromis", type: "diplomate" },
+                    { text: "Je fais comme si je n'avais rien entendu", type: "évitant" }
+                ]
+            },
+            {
+                question: "Tu vois une personne âgée tomber dans la rue. Comment réagis-tu ?",
+                answers: [
+                    { text: "Je me précipite pour l'aider immédiatement", type: "altruiste" },
+                    { text: "Je regarde si d'autres personnes vont aider d'abord", type: "prudent" },
+                    { text: "J'appelle les secours", type: "responsable" },
+                    { text: "Je continue mon chemin", type: "indifférent" }
+                ]
+            },
+            {
+                question: "Ton collègue prend le crédit pour ton travail lors d'une réunion importante. Que fais-tu ?",
+                answers: [
+                    { text: "Je l'interromps immédiatement pour corriger", type: "assertif" },
+                    { text: "Je lui en parle en privé après la réunion", type: "diplomate" },
+                    { text: "Je ne dis rien pour éviter le conflit", type: "évitant" },
+                    { text: "Je trouve un moyen subtil de mentionner ma contribution", type: "stratège" }
+                ]
+            },
+            {
+                question: "Tu as la possibilité de tricher à un examen sans te faire prendre. Que fais-tu ?",
+                answers: [
+                    { text: "Je triche sans hésiter", type: "opportuniste" },
+                    { text: "Je refuse catégoriquement", type: "intègre" },
+                    { text: "Je n'aurais même pas l'idée de tricher", type: "moral" },
+                    { text: "J'hésite mais finis par ne pas tricher", type: "prudent" }
+                ]
+            },
+            {
+                question: "Un ami te demande un prêt d'argent important que tu peux te permettre, mais tu sais qu'il a du mal à rembourser. Que fais-tu ?",
+                answers: [
+                    { text: "Je lui prête sans conditions", type: "généreux" },
+                    { text: "Je lui prête mais avec un contrat écrit", type: "prudent" },
+                    { text: "Je refuse poliment", type: "réaliste" },
+                    { text: "Je lui donne une partie de la somme sans attendre de remboursement", type: "altruiste" }
+                ]
+            },
+            {
+                question: "Tu découvres que ton restaurant préféré maltraite ses employés. Continues-tu à y aller ?",
+                answers: [
+                    { text: "Non, je boycotte immédiatement", type: "éthique" },
+                    { text: "Oui, la nourriture est trop bonne", type: "égoïste" },
+                    { text: "J'en parle au propriétaire avant de décider", type: "engagé" },
+                    { text: "Je cherche des alternatives mais je pourrais y retourner", type: "flexible" }
+                ]
+            },
+            {
+                question: "Tu peux sauver soit 5 inconnus soit une personne que tu aimes dans une situation dangereuse. Que choisis-tu ?",
+                answers: [
+                    { text: "Je sauve les 5 inconnus", type: "utilitariste" },
+                    { text: "Je sauve la personne que j'aime", type: "émotionnel" },
+                    { text: "J'essaie de trouver un moyen de tous les sauver", type: "idéaliste" },
+                    { text: "Je ne sais pas, je panique", type: "indécis" }
+                ]
+            },
+            {
+                question: "On te propose un poste mieux payé mais qui va à l'encontre de tes valeurs. Que fais-tu ?",
+                answers: [
+                    { text: "Je prends le poste, l'argent est important", type: "matérialiste" },
+                    { text: "Je refuse, mes valeurs sont plus importantes", type: "principlé" },
+                    { text: "J'essaie de négocier pour changer certains aspects du poste", type: "négociateur" },
+                    { text: "Je demande du temps pour réfléchir", type: "réfléchi" }
+                ]
+            },
+            {
+                question: "Tu dois choisir entre dire une vérité qui blessera quelqu'un ou mentir pour le protéger. Que fais-tu ?",
+                answers: [
+                    { text: "Je dis toujours la vérité", type: "honnête" },
+                    { text: "Je mens pour protéger", type: "protecteur" },
+                    { text: "Je trouve une façon adoucie de dire la vérité", type: "diplomate" },
+                    { text: "J'évite de répondre directement", type: "évitant" }
+                ]
+            }
+        ];
+
+        const profiles = {
+            "égoïste": { 
+                title: "Le Survivant", 
+                description: "Tu choisis la logique et l'intérêt personnel avant tout. Tu es pragmatique et sais te protéger dans un monde compétitif.", 
+                quote: "« La nature a doté l'homme du désir de se conserver et de la répugnance à se détruire. » - Montesquieu",
+                icon: "🦊"
+            },
+            "moral": { 
+                title: "Le Juste", 
+                description: "Tu respectes les règles et les principes éthiques même quand personne ne regarde. Ton intégrité guide tes décisions.", 
+                quote: "« La moralité est la base des choses et la vérité est la substance de toute moralité. » - Gandhi",
+                icon: "⚖️"
+            },
+            "empathique": { 
+                title: "L'Empathique", 
+                description: "Tu ressens profondément les émotions des autres et agis en conséquence. Ta compassion est ta boussole morale.", 
+                quote: "« L'empathie est voir avec les yeux de l'autre, écouter avec les oreilles de l'autre et ressentir avec le cœur de l'autre. » - Alfred Adler",
+                icon: "❤️"
+            },
+            "indifférent": { 
+                title: "Le Détaché", 
+                description: "Tu préfères ne pas t'impliquer dans les affaires des autres. Tu gardes tes distances pour préserver ta tranquillité.", 
+                quote: "« Parfois, le détachement n'est pas l'indifférence, mais la simple acceptation que certaines choses ne peuvent être changées. »",
+                icon: "🌬️"
+            },
+            "loyal": { 
+                title: "Le Fidèle", 
+                description: "Ta loyauté envers tes proches est inébranlable. Tu places la confiance et la fidélité au-dessus de tout.", 
+                quote: "« La loyauté est une vertu rare qui ne se divise pas. » - Jean Gastaldi",
+                icon: "🛡️"
+            },
+            "diplomate": { 
+                title: "Le Conciliateur", 
+                description: "Tu cherches toujours des solutions qui satisfont toutes les parties. Ton talent pour la médiation est précieux.", 
+                quote: "« La véritable diplomatie consiste à pouvoir dire à quelqu'un d'aller se faire voir de telle manière qu'il ait hâte d'y aller. »",
+                icon: "🕊️"
+            },
+            "altruiste": { 
+                title: "Le Bienfaiteur", 
+                description: "Tu donnes sans compter et trouves ta satisfaction dans l'aide aux autres. Ton générosité est inspirante.", 
+                quote: "« Le bonheur est la seule chose qui se double si on le partage. » - Albert Schweitzer",
+                icon: "🌟"
+            },
+            "assertif": { 
+                title: "Le Direct", 
+                description: "Tu t'exprimes clairement et défends tes droits sans agressivité. Ta franchise est parfois surprenante mais toujours respectée.", 
+                quote: "« La franchise est la source de l'éloquence. » - Vauvenargues",
+                icon: "🗣️"
+            },
+            "stratège": { 
+                title: "Le Tactitien", 
+                description: "Tu analyses chaque situation sous tous les angles avant d'agir. Ta pensée stratégique te permet de naviguer habilement.", 
+                quote: "« La stratégie est l'art de se servir de la bataille pour gagner la guerre. » - Sun Tzu",
+                icon: "♟️"
+            },
+            "opportuniste": { 
+                title: "L'Arriviste", 
+                description: "Tu sais reconnaître et saisir les opportunités quand elles se présentent, parfois au détriment des principes.", 
+                quote: "« L'opportunité ne frappe qu'une fois à la porte. » - Proverbe français",
+                icon: "🎯"
+            },
+            "intègre": { 
+                title: "L'Intègre", 
+                description: "Ton sens de l'honneur et de l'honnêteté guide chacune de tes actions. Tu refuses tout compromis moral.", 
+                quote: "« L'intégrité est faire la bonne chose, même lorsque personne ne regarde. » - C.S. Lewis",
+                icon: "✨"
+            },
+            "généreux": { 
+                title: "Le Généreux", 
+                description: "Tu donnes sans compter et trouves ta joie dans le partage. Ta générosité est désintéressée.", 
+                quote: "« On n'a jamais perdu le bonheur qu'on a donné. » - Sœur Emmanuelle",
+                icon: "🎁"
+            },
+            "réaliste": { 
+                title: "Le Pragmatique", 
+                description: "Tu vois le monde tel qu'il est, sans illusions. Tes décisions sont basées sur des faits concrets.", 
+                quote: "« Le réalisme consiste à reconnaître que le monde n'est pas comme on voudrait qu'il soit. » - Raymond Aron",
+                icon: "🔍"
+            },
+            "éthique": { 
+                title: "L'Éthique", 
+                description: "Tes choix sont guidés par un système de valeurs profondément ancré. Tu agis en accord avec tes convictions.", 
+                quote: "« L'éthique est la tentative de mettre la raison au service de l'amour. » - Paul Ricœur",
+                icon: "🌱"
+            },
+            "utilitariste": { 
+                title: "L'Utilitariste", 
+                description: "Tu cherches le plus grand bien pour le plus grand nombre. Tes décisions sont basées sur des calculs rationnels.", 
+                quote: "« Le bonheur est la seule fin de l'existence humaine. » - John Stuart Mill",
+                icon: "🧮"
+            },
+            "émotionnel": { 
+                title: "Le Sensible", 
+                description: "Tes émotions guident fortement tes choix. Tu es profondément connecté à tes sentiments et à ceux des autres.", 
+                quote: "« La raison peut nous tromper, le cœur jamais. » - Jean-Jacques Rousseau",
+                icon: "🎭"
+            },
+            "idéaliste": { 
+                title: "L'Idéaliste", 
+                description: "Tu crois en un monde meilleur et agis pour le réaliser. Ton optimisme est contagieux.", 
+                quote: "« Les idéalistes sont assez fous pour croire qu'ils peuvent changer le monde... et ils le font. »",
+                icon: "🌈"
+            },
+            "matérialiste": { 
+                title: "Le Matérialiste", 
+                description: "Tu accordes de l'importance aux aspects concrets et matériels de la vie. Tes choix sont souvent pragmatiques.", 
+                quote: "« L'argent ne fait pas le bonheur, mais il y contribue fortement. » - Proverbe français",
+                icon: "💰"
+            },
+            "principlé": { 
+                title: "Le Principlé", 
+                description: "Tu as des convictions solides que tu ne compromets jamais. Tes principes sont ton guide.", 
+                quote: "« Un homme sans principes est comme un navire sans gouvernail. » - Thomas Carlyle",
+                icon: "🧭"
+            },
+            "honnête": { 
+                title: "L'Honnête", 
+                description: "Tu dis toujours la vérité, même quand elle est difficile. Ton intégrité est remarquable.", 
+                quote: "« La vérité peut blesser un temps, mais le mensonge fait mal pour toujours. »",
+                icon: "🪞"
+            },
+            "protecteur": { 
+                title: "Le Protecteur", 
+                description: "Tu fais passer la sécurité et le bien-être des autres avant tout. Ton instinct de protection est fort.", 
+                quote: "« Protéger les autres, c'est se protéger soi-même. » - Proverbe chinois",
+                icon: "🛡️"
+            }
+        };
+
+        // Game State
+        let currentQuestion = 0;
+        let answers = [];
+        const totalQuestions = questions.length;
+
+        // DOM Elements
+        const landingPage = document.getElementById('landing');
+        const questionContainer = document.getElementById('question-container');
+        const resultsContainer = document.getElementById('results-container');
+        const startBtn = document.getElementById('start-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const restartBtn = document.getElementById('restart-btn');
+        const shareBtn = document.getElementById('share-btn');
+        const questionText = document.getElementById('question-text');
+        const answerChoices = document.getElementById('answer-choices');
+        const questionCounter = document.getElementById('question-counter');
+        const totalQuestionsEl = document.getElementById('total-questions');
+        const progressBar = document.getElementById('progress-bar');
+        const resultTitle = document.getElementById('result-title');
+        const resultDescription = document.getElementById('result-description');
+        const resultQuote = document.getElementById('result-quote');
+        const resultIcon = document.getElementById('result-icon');
+
+        // Initialize
+        totalQuestionsEl.textContent = totalQuestions;
+
+        // Event Listeners
+        startBtn.addEventListener('click', startGame);
+        nextBtn.addEventListener('click', nextQuestion);
+        restartBtn.addEventListener('click', restartGame);
+        shareBtn.addEventListener('click', shareResults);
+
+        // Functions
+        function startGame() {
+            landingPage.classList.add('hidden');
+            questionContainer.classList.remove('hidden');
+            showQuestion();
+        }
+
+        function showQuestion() {
+            // Update progress
+            questionCounter.textContent = currentQuestion + 1;
+            progressBar.style.width = `${((currentQuestion + 1) / totalQuestions) * 100}%`;
+            
+            // Set question text
+            questionText.textContent = questions[currentQuestion].question;
+            
+            // Clear previous answers
+            answerChoices.innerHTML = '';
+            
+            // Add answer choices
+            questions[currentQuestion].answers.forEach((answer, index) => {
+                const button = document.createElement('button');
+                button.className = 'choice-btn w-full text-left bg-gray-50 hover:bg-indigo-50 border border-gray-200 rounded-lg p-4 transition-all duration-200';
+                button.textContent = answer.text;
+                button.dataset.type = answer.type;
+                button.addEventListener('click', () => selectAnswer(answer.type, button));
+                answerChoices.appendChild(button);
+            });
+            
+            // Hide next button initially
+            nextBtn.classList.add('hidden');
+        }
+
+        function selectAnswer(type, button) {
+            // Store answer
+            answers.push(type);
+            
+            // Highlight selected button
+            const buttons = answerChoices.querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-indigo-100', 'border-indigo-300');
+                btn.classList.add('border-gray-200');
+            });
+            button.classList.add('bg-indigo-100', 'border-indigo-300');
+            button.classList.remove('border-gray-200');
+            
+            // Show next button
+            nextBtn.classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            
+            if (currentQuestion < totalQuestions) {
+                showQuestion();
+                nextBtn.classList.add('hidden');
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            questionContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+            
+            // Calculate most common answer type
+            const typeCounts = {};
+            answers.forEach(type => {
+                typeCounts[type] = (typeCounts[type] || 0) + 1;
+            });
+            
+            let maxCount = 0;
+            let dominantType = '';
+            for (const type in typeCounts) {
+                if (typeCounts[type] > maxCount) {
+                    maxCount = typeCounts[type];
+                    dominantType = type;
+                }
+            }
+            
+            // Display results
+            const profile = profiles[dominantType] || profiles["moral"]; // Fallback to moral if type not found
+            resultTitle.textContent = profile.title;
+            resultDescription.textContent = profile.description;
+            resultQuote.textContent = profile.quote;
+            resultIcon.textContent = profile.icon;
+        }
+
+        function restartGame() {
+            currentQuestion = 0;
+            answers = [];
+            resultsContainer.classList.add('hidden');
+            questionContainer.classList.remove('hidden');
+            showQuestion();
+        }
+
+        function shareResults() {
+            const profileTitle = resultTitle.textContent;
+            const profileDesc = resultDescription.textContent;
+            const shareText = `Mon profil psychologique est "${profileTitle}" : ${profileDesc}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Mon résultat au Dilemme du Jour',
+                    text: shareText,
+                    url: window.location.href
+                }).catch(err => {
+                    console.log('Error sharing:', err);
+                    copyToClipboard(shareText);
+                });
+            } else {
+                copyToClipboard(shareText);
+                alert('Résultat copié dans le presse-papiers !');
+            }
+        }
+
+        function copyToClipboard(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+        }
+    </script>
+</body>
+</html>
